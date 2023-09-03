@@ -200,6 +200,7 @@ class GaussianDiffusion:
             (1.0 - self.alphas_cumprod_prev) * np.sqrt(alphas) / (1.0 - self.alphas_cumprod)
         )
 
+    # TODO: understand the details, currently regard as "Forward Diffusion Process"
     def q_mean_variance(self, x_start, t):
         """
         Get the distribution q(x_t | x_0).
@@ -212,6 +213,7 @@ class GaussianDiffusion:
         log_variance = _extract_into_tensor(self.log_one_minus_alphas_cumprod, t, x_start.shape)
         return mean, variance, log_variance
 
+    # sample results of "Forward Diffusion Process"
     def q_sample(self, x_start, t, noise=None):
         """
         Diffuse the data for a given number of diffusion steps.
@@ -229,6 +231,7 @@ class GaussianDiffusion:
             + _extract_into_tensor(self.sqrt_one_minus_alphas_cumprod, t, x_start.shape) * noise
         )
 
+    # TODO: learn
     def q_posterior_mean_variance(self, x_start, x_t, t):
         """
         Compute the mean and variance of the diffusion posterior:
@@ -251,6 +254,7 @@ class GaussianDiffusion:
         )
         return posterior_mean, posterior_variance, posterior_log_variance_clipped
 
+    # TODO: learn, currently regard as "Reverse Diffusion Process"
     def p_mean_variance(self, model, x, t, clip_denoised=True, denoised_fn=None, model_kwargs=None):
         """
         Apply the model to get p(x_{t-1} | x_t), as well as a prediction of
@@ -373,6 +377,7 @@ class GaussianDiffusion:
         out["mean"], _, _ = self.q_posterior_mean_variance(x_start=out["pred_xstart"], x_t=x, t=t)
         return out
 
+    # TODO: currently regard as sample results of "Reverse Diffusion Process"
     def p_sample(
         self,
         model,
@@ -416,6 +421,7 @@ class GaussianDiffusion:
         sample = out["mean"] + nonzero_mask * th.exp(0.5 * out["log_variance"]) * noise
         return {"sample": sample, "pred_xstart": out["pred_xstart"]}
 
+    # The python function version of "p_sample_loop_progressive"
     def p_sample_loop(
         self,
         model,
@@ -461,6 +467,7 @@ class GaussianDiffusion:
             final = sample
         return final["sample"]
 
+    # The python generator of main De-noising process
     def p_sample_loop_progressive(
         self,
         model,

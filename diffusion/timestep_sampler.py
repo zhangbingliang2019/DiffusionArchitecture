@@ -59,6 +59,7 @@ class ScheduleSampler(ABC):
         return indices, weights
 
 
+# sample with equal probability
 class UniformSampler(ScheduleSampler):
     def __init__(self, diffusion):
         self.diffusion = diffusion
@@ -68,6 +69,7 @@ class UniformSampler(ScheduleSampler):
         return self._weights
 
 
+# Use loss for each timestep to update sampling weight
 class LossAwareSampler(ScheduleSampler):
     def update_with_local_losses(self, local_ts, local_losses):
         """
@@ -117,6 +119,7 @@ class LossAwareSampler(ScheduleSampler):
         """
 
 
+# Upgrade version of LossAwareSampler
 class LossSecondMomentResampler(LossAwareSampler):
     def __init__(self, diffusion, history_per_term=10, uniform_prob=0.001):
         self.diffusion = diffusion
