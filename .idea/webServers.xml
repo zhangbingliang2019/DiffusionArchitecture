@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="5cbc330b-b133-441c-a8ec-de14ca87e60f" name="61202">
+        <fileTransfer rootFolder="/home/bingliang" accessType="SFTP" host="rp-a100-80gb-8x-hba004.cloud.together.ai" port="61204" sshConfigId="34b3ac13-23b6-4017-9e0d-2a1650ad52ea" sshConfig="bingliang@rp-a100-80gb-8x-hba004.cloud.together.ai:61204 key" keyPair="true">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" keepAliveTimeout="0" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+      <webServer id="dca43394-51f4-48db-9a72-cb04a34459d9" name="61203">
+        <fileTransfer rootFolder="/home/bingliang" accessType="SFTP" host="rp-a100-80gb-8x-hba003.cloud.together.ai" port="61203" sshConfigId="0de1d109-5d87-4d7c-af47-dd26794b3d88" sshConfig="bingliang@rp-a100-80gb-8x-hba003.cloud.together.ai:61203 key" keyPair="true">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" keepAliveTimeout="0" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+      <webServer id="4d162779-ad70-4055-ae82-c16d4d8d59a3" name="61204">
+        <fileTransfer rootFolder="/home/bingliang" accessType="SFTP" host="rp-a100-80gb-8x-hba004.cloud.together.ai" port="61204" sshConfigId="34b3ac13-23b6-4017-9e0d-2a1650ad52ea" sshConfig="bingliang@rp-a100-80gb-8x-hba004.cloud.together.ai:61204 key" keyPair="true">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" keepAliveTimeout="0" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>

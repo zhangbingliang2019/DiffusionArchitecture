@@ -159,8 +159,9 @@ def main(args):
         input_size=latent_size,
         num_classes=args.num_classes
     )
-    ckpt = 'pretrained_models/DiT-XL-2-256x256-video.pt'
-    video_model_load_stage_dict_from_image(ckpt, model)
+    if args.pretrained:
+        ckpt = 'pretrained_models/DiT-XL-2-256x256-video.pt'
+        video_model_load_stage_dict_from_image(ckpt, model)
     # Note that parameter initialization is done within the DiT constructor
     ema = deepcopy(model).to(device)  # Create an EMA of the model for use after training
     requires_grad(ema, False)
@@ -272,6 +273,7 @@ if __name__ == "__main__":
     # Default args here will train DiT-XL/2 with the hyperparameters we used in our paper (except training iters).
     parser = argparse.ArgumentParser()
     parser.add_argument("--data-path", type=str, default=None)
+    parser.add_argument("--pretrained", type=str, default=False)
     parser.add_argument("--results-dir", type=str, default="results")
     parser.add_argument("--model", type=str, choices=list(VideoDiT_models.keys()), default="DiT-XL/2")
     parser.add_argument("--image-size", type=int, choices=[256, 512], default=256)

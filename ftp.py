@@ -11,3 +11,11 @@ for i in tqdm.trange(1, 10001, 50):
     for sub_p in tqdm.tqdm(Path(path + p).glob('*')):
         root.write(str(sub_p), p+'/'+sub_p.name)
 root.close()
+
+
+import zipfile
+with zipfile.ZipFile("WebVid.zip", 'r') as zObject:
+    # Extracting all the members of the zip
+    # into a specific location.
+    zObject.extractall(
+        path='WebVid2.5M/videos')
