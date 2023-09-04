@@ -211,6 +211,7 @@ class VideoDiT(nn.Module):
         self.pos_embed = nn.Parameter(torch.zeros(1, num_patches, hidden_size), requires_grad=False)
         # ADD, positional embedding for frame dimension
         self.frame_embed = nn.Parameter(torch.zeros(1, frame_size, hidden_size), requires_grad=False)
+        self.frame_mlp = nn.Linear(hidden_size, hidden_size)
 
         self.blocks = nn.ModuleList([
             VideoDiTBlock(hidden_size, frame_size, num_heads, mlp_ratio=mlp_ratio) for _ in range(depth)
@@ -230,9 +231,11 @@ class VideoDiT(nn.Module):
         # Initialize (and freeze) pos_embed by sin-cos embedding:
         pos_embed = get_2d_sincos_pos_embed(self.pos_embed.shape[-1], int(self.x_embedder.num_patches ** 0.5))
         self.pos_embed.data.copy_(torch.from_numpy(pos_embed).float().unsqueeze(0))
-        # ADD
+        # ADD, zero-out frame positional encoding
         frame_embed = get_1d_sincos_pos_embed(self.frame_embed.shape[-1], self.frame_size)
         self.frame_embed.data.copy_(torch.from_numpy(frame_embed).float().unsqueeze(0))
+        nn.init.constant_(self.frame_mlp.weight, 0)
+        nn.init.constant_(self.frame_mlp.bias, 0)
 
         # Initialize patch_embed like nn.Linear (instead of nn.Conv2d):
         w = self.x_embedder.proj.weight.data
@@ -285,7 +288,7 @@ class VideoDiT(nn.Module):
         x = self.x_embedder(x) + self.pos_embed  # (N, T, D), where T = H * W / patch_size ** 2, N = B * F
         # frame positional encoding
         x = x.unsqueeze(dim=1).reshape(-1, self.frame_size, *x.shape[1:])  # (B, F, T, D)
-        x = (x + self.frame_embed.unsqueeze(dim=2)).flatten(0, 1)  # (N, T, D)
+        x = (x + self.frame_mlp(self.frame_embed).unsqueeze(dim=2)).flatten(0, 1)  # (N, T, D)
 
         t = self.t_embedder(t)                   # (N, D)
         y = self.y_embedder(y, self.training)    # (N, D)
@@ -381,13 +384,13 @@ def get_1d_sincos_pos_embed_from_grid(embed_dim, pos):
 #################################################################################
 
 def DiT_XL_2(**kwargs):
-    return VideoDiT(depth=28, hidden_size=1152, patch_size=2, num_heads=16, **kwargs)
+    return VideoDiT(depth=28, frame_size=16, hidden_size=1152, patch_size=2, num_heads=16, **kwargs)
 
 
 def DiT_L_4(**kwargs):
-    return VideoDiT(depth=24, hidden_size=1024, patch_size=4, num_heads=16, **kwargs)
+    return VideoDiT(depth=24, frame_size=16, hidden_size=1024, patch_size=4, num_heads=16, **kwargs)
 
 
-DiT_models = {
-    'DiT-XL/2': DiT_XL_2
+VideoDiT_models = {
+    'DiT-XL/2': DiT_XL_2, 'DiT-L/4': DiT_L_4
 }

@@ -8,13 +8,14 @@
 Sample new images from a pre-trained DiT.
 """
 import torch
+
 torch.backends.cuda.matmul.allow_tf32 = True
 torch.backends.cudnn.allow_tf32 = True
 from torchvision.utils import save_image
 from diffusion import create_diffusion
 from diffusers.models import AutoencoderKL
 from download import find_model
-from models import DiT_models
+from video_models import VideoDiT_models
 import argparse
 
 
@@ -31,7 +32,7 @@ def main(args):
 
     # Load model:
     latent_size = args.image_size // 8
-    model = DiT_models[args.model](
+    model = VideoDiT_models[args.model](
         input_size=latent_size,
         num_classes=args.num_classes
     ).to(device)
@@ -52,6 +53,7 @@ def main(args):
     y = torch.tensor(class_labels, device=device)  # (n, )
 
     # Setup classifier-free guidance:
+    # TODO: add condition
     z = torch.cat([z, z], 0)  # (2n, 4, W, W)
     y_null = torch.tensor([1000] * n, device=device)  # (n, ) Null token
     y = torch.cat([y, y_null], 0)  # (2n, )
@@ -64,14 +66,15 @@ def main(args):
     samples, _ = samples.chunk(2, dim=0)  # Remove null class samples
     samples = vae.decode(samples / 0.18215).sample
 
-    # Save and display images:
-    save_image(samples, "sample.png", nrow=8, normalize=True, value_range=(-1, 1))
+    # Save videos as image grid
+    save_image(samples, "sample_video.png", nrow=8, normalize=True, value_range=(-1, 1))
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", type=str, choices=list(DiT_models.keys()), default="DiT-XL/2")
+    parser.add_argument("--model", type=str, choices=list(VideoDiT_models.keys()), default="DiT-XL/2")
     parser.add_argument("--vae", type=str, choices=["ema", "mse"], default="mse")
+    parser.add_argument("--frame_size", type=int, default=16)
     parser.add_argument("--image-size", type=int, choices=[256, 512], default=256)
     parser.add_argument("--num-classes", type=int, default=1000)
     parser.add_argument("--cfg-scale", type=float, default=4.0)
