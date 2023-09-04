@@ -390,6 +390,9 @@ def DiT_XL_2(**kwargs):
 def DiT_L_4(**kwargs):
     return VideoDiT(depth=24, frame_size=16, hidden_size=1024, patch_size=4, num_heads=16, **kwargs)
 
+def DiT_XL_2_F_1(**kwargs):
+    return VideoDiT(depth=28, frame_size=1, hidden_size=1152, patch_size=2, num_heads=16, **kwargs)
+
 
 VideoDiT_models = {
     'DiT-XL/2': DiT_XL_2, 'DiT-L/4': DiT_L_4
