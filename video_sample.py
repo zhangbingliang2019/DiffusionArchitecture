@@ -15,7 +15,7 @@ from torchvision.utils import save_image
 from diffusion import create_diffusion
 from diffusers.models import AutoencoderKL
 from download import find_model
-from video_models import VideoDiT_models
+import models
 import argparse
 
 
@@ -26,13 +26,11 @@ def main(args):
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     if args.ckpt is None:
-        assert args.model == "DiT-XL/2", "Only DiT-XL/2 models are available for auto-download."
         assert args.image_size in [256, 512]
-        assert args.num_classes == 1000
 
     # Load model:
     latent_size = args.image_size // 8
-    model = VideoDiT_models[args.model](
+    model = models.VideoDiT_models[args.model](
         input_size=latent_size
     ).to(device)
     # Auto-download a pre-trained model or load a custom DiT checkpoint from train.py:
@@ -80,11 +78,10 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", type=str, choices=list(VideoDiT_models.keys()), default="DiT-XL/2")
+    parser.add_argument("--model", type=str, choices=list(models.VideoDiT_models.keys()), default="FA-XL/2")
     parser.add_argument("--vae", type=str, choices=["ema", "mse"], default="mse")
-    parser.add_argument("--frame_size", type=int, default=16)
+    parser.add_argument("--frame_size", type=int, default=8)
     parser.add_argument("--image-size", type=int, choices=[256, 512], default=256)
-    parser.add_argument("--num-classes", type=int, default=1000)
     parser.add_argument("--cfg-scale", type=float, default=1.0)
     parser.add_argument("--num-sampling-steps", type=int, default=250)
     parser.add_argument("--seed", type=int, default=0)

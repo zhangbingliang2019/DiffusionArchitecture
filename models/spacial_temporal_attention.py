@@ -455,6 +455,9 @@ def DiT_XL_2(**kwargs):
 def DiT_L_4(**kwargs):
     return STAttentionVideoDiT(depth=24, frame_size=16, hidden_size=1024, patch_size=4, num_heads=16, **kwargs)
 
+def DiT_B_4(**kwargs):
+    return STAttentionVideoDiT(depth=12, frame_size=8, hidden_size=768, patch_size=4, num_heads=12, **kwargs)
+
 
 if __name__ == '__main__':
     model = DiT_L_4().to('cuda')
