@@ -142,16 +142,19 @@ class VideoDiTBlock(nn.Module):
         super().__init__()
         self.frame_size = frame_size
         self.spacial_block = DiTBlock(hidden_size, num_heads, mlp_ratio, **block_kwargs)
-        self.temporal_block = DiTBlock(hidden_size, num_heads, mlp_ratio, **block_kwargs)
+        if frame_size != 1:
+            self.temporal_block = DiTBlock(hidden_size, num_heads, mlp_ratio, **block_kwargs)
 
     def forward(self, x, c):
         # x: (N, T, D), c: (N, D), where N = B * F
         patch_size = x.size(1)
         x = self.spacial_block(x, c)
-        x = space_time_alternate(x, self.frame_size)
-        c_time = label_space_to_time(c, self.frame_size, patch_size)
-        x = self.temporal_block(x, c_time)
-        return space_time_alternate(x, patch_size)
+        if self.frame_size != 1:
+            x = space_time_alternate(x, self.frame_size)
+            c_time = label_space_to_time(c, self.frame_size, patch_size)
+            x = self.temporal_block(x, c_time)
+            x = space_time_alternate(x, patch_size)
+        return x
 
 
 class FinalLayer(nn.Module):
@@ -254,8 +257,9 @@ class VideoDiT(nn.Module):
             nn.init.constant_(block.spacial_block.adaLN_modulation[-1].weight, 0)
             nn.init.constant_(block.spacial_block.adaLN_modulation[-1].bias, 0)
 
-            nn.init.constant_(block.temporal_block.adaLN_modulation[-1].weight, 0)
-            nn.init.constant_(block.temporal_block.adaLN_modulation[-1].bias, 0)
+            if block.frame_size != 1:
+                nn.init.constant_(block.temporal_block.adaLN_modulation[-1].weight, 0)
+                nn.init.constant_(block.temporal_block.adaLN_modulation[-1].bias, 0)
 
         # Zero-out output layers:
         nn.init.constant_(self.final_layer.adaLN_modulation[-1].weight, 0)
@@ -395,5 +399,5 @@ def DiT_XL_2_F_1(**kwargs):
 
 
 VideoDiT_models = {
-    'DiT-XL/2': DiT_XL_2, 'DiT-L/4': DiT_L_4
+    'DiT-XL/2': DiT_XL_2, 'DiT-L/4': DiT_L_4, 'DiT-XL/2/F1': DiT_XL_2_F_1
 }

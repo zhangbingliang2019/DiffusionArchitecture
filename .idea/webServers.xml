@@ -3,7 +3,7 @@
   <component name="WebServers">
     <option name="servers">
       <webServer id="5cbc330b-b133-441c-a8ec-de14ca87e60f" name="61202">
-        <fileTransfer rootFolder="/home/bingliang" accessType="SFTP" host="rp-a100-80gb-8x-hba004.cloud.together.ai" port="61204" sshConfigId="34b3ac13-23b6-4017-9e0d-2a1650ad52ea" sshConfig="bingliang@rp-a100-80gb-8x-hba004.cloud.together.ai:61204 key" keyPair="true">
+        <fileTransfer rootFolder="/home/bingliang" accessType="SFTP" host="rp-a100-80gb-8x-hba002.cloud.together.ai" port="61202" sshConfigId="132fca3c-725c-4c69-b33b-73b7bd31457f" sshConfig="bingliang@rp-a100-80gb-8x-hba002.cloud.together.ai:61202 key" keyPair="true">
           <advancedOptions>
             <advancedOptions dataProtectionLevel="Private" keepAliveTimeout="0" passiveMode="true" shareSSLContext="true" />
           </advancedOptions>

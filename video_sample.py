@@ -45,7 +45,7 @@ def main(args):
     vae = AutoencoderKL.from_pretrained(f"stabilityai/sd-vae-ft-{args.vae}").to(device)
 
     # Labels to condition the model with (feel free to change):
-    class_labels = list(range(32))
+    class_labels = [1000] * 32
 
     # Create sampling noise:
     n = len(class_labels)
