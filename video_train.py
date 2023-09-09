@@ -8,6 +8,7 @@
 A minimal training script for DiT using PyTorch DDP.
 """
 import torch
+
 # the first flag below was False when we tested this script but True makes A100 training a lot faster:
 torch.backends.cuda.matmul.allow_tf32 = True
 torch.backends.cudnn.allow_tf32 = True
@@ -15,6 +16,7 @@ import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
+import models
 from torchvision.datasets import ImageFolder
 from torchvision import transforms
 import numpy as np
@@ -27,12 +29,10 @@ import argparse
 import logging
 import os
 
-from video_models import VideoDiT_models
 from diffusion import create_diffusion
 from diffusers.models import AutoencoderKL
 from video_dataset import WebVid
 from download import find_model
-
 
 
 def video_model_load_stage_dict_from_image(ckpt, video_model):
@@ -155,9 +155,8 @@ def main(args):
     # Create model:
     assert args.image_size % 8 == 0, "Image size must be divisible by 8 (for the VAE encoder)."
     latent_size = args.image_size // 8
-    model = VideoDiT_models[args.model](
+    model = models.VideoDiT_models[args.model](
         input_size=latent_size,
-        num_classes=args.num_classes
     )
     if args.pretrained:
         logger.info('Load model from pretrained checkpoint')
@@ -177,7 +176,7 @@ def main(args):
     # Setup data:, TODO: replace data path
     dataset = WebVid("/home/bingliang/data/WebVid2.5M/videos",
                      "/home/bingliang/data/WebVid2.5M/subset_new_info.json",
-                     image_size=args.image_size, frame_size=args.frame_size)
+                     image_size=args.image_size, frame_size=args.frame_size, overfitting_test=True)
     sampler = DistributedSampler(
         dataset,
         num_replicas=dist.get_world_size(),
@@ -213,16 +212,19 @@ def main(args):
         logger.info(f"Beginning epoch {epoch}...")
         for x, y in loader:
             x = x.to(device).flatten(0, 1)  # (B * F, C, H, W)
-            #y = y.to(device)
             with torch.no_grad():
                 # Map input images to latent space + normalize latents:
                 x = vae.encode(x).latent_dist.sample().mul_(0.18215)
-            t = torch.randint(0, diffusion.num_timesteps, (x.shape[0]//args.frame_size,), device=device)
-            # a frame should contain same timesteps
-            t = t.unsqueeze(dim=1) + torch.zeros(1, args.frame_size).to(device)
+
+            # process t a frame should contain same timesteps
+            t = torch.randint(0, diffusion.num_timesteps, (x.shape[0] // args.frame_size,), device=device)
+            t = t.unsqueeze(dim=1) + torch.zeros(1, args.frame_size).to(t.device)
             t = t.flatten(0).long()
             # TODO: add condition
-            model_kwargs = dict(y=(torch.ones(x.shape[0]).to(device)*args.num_classes).long())
+            # process y a frame should contain same condition
+            new_y = []
+            for i in y: new_y += [i] * args.frame_size
+            model_kwargs = dict(y=new_y)
             loss_dict = diffusion.training_losses(model, x, t, model_kwargs)
             loss = loss_dict["loss"].mean()
             opt.zero_grad()
@@ -243,7 +245,8 @@ def main(args):
                 avg_loss = torch.tensor(running_loss / log_steps, device=device)
                 dist.all_reduce(avg_loss, op=dist.ReduceOp.SUM)
                 avg_loss = avg_loss.item() / dist.get_world_size()
-                logger.info(f"(step={train_steps:07d}) Train Loss: {avg_loss:.4f}, Train Steps/Sec: {steps_per_sec:.2f}")
+                logger.info(
+                    f"(step={train_steps:07d}) Train Loss: {avg_loss:.4f}, Train Steps/Sec: {steps_per_sec:.2f}")
                 # Reset monitoring variables:
                 running_loss = 0
                 log_steps = 0
@@ -276,16 +279,15 @@ if __name__ == "__main__":
     parser.add_argument("--data-path", type=str, default=None)
     parser.add_argument("--pretrained", type=bool, default=False)
     parser.add_argument("--results-dir", type=str, default="results")
-    parser.add_argument("--model", type=str, choices=list(VideoDiT_models.keys()), default="DiT-XL/2")
+    parser.add_argument("--model", type=str, choices=list(models.VideoDiT_models.keys()), default="STA-L/4")
     parser.add_argument("--image-size", type=int, choices=[256, 512], default=256)
     parser.add_argument("--frame_size", type=int, default=16)
-    parser.add_argument("--num-classes", type=int, default=1000)
     parser.add_argument("--epochs", type=int, default=1400)
-    parser.add_argument("--global-batch-size", type=int, default=16)
+    parser.add_argument("--global-batch-size", type=int, default=4)
     parser.add_argument("--global-seed", type=int, default=0)
     parser.add_argument("--vae", type=str, choices=["ema", "mse"], default="ema")  # Choice doesn't affect training
-    parser.add_argument("--num-workers", type=int, default=8)
+    parser.add_argument("--num-workers", type=int, default=4)
     parser.add_argument("--log-every", type=int, default=50)
-    parser.add_argument("--ckpt-every", type=int, default=5_000)
+    parser.add_argument("--ckpt-every", type=int, default=200)
     args = parser.parse_args()
     main(args)

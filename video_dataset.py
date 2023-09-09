@@ -25,13 +25,14 @@ def frame_sampling(t_video, frame_size):
 
 
 class WebVid(Dataset):
-    def __init__(self, video_root, json_path, image_size=256, frame_size=32, group_limit=10_000):
+    def __init__(self, video_root, json_path, image_size=256, frame_size=32, overfitting_test=False):
         super().__init__()
         # ['videoid', 'name', 'page_idx', 'page_dir', 'duration', 'contentUrl']
         self.info = json.load(open(json_path, 'r'))  # list of dict: {video_id, caption, page_dir},
         self.video_root = video_root
         self.frame_size = frame_size
         self.image_size = image_size
+        self.test = overfitting_test
 
         # # filter out extra data
         # for i in tqdm.trange(meta.shape[0]):
@@ -51,6 +52,8 @@ class WebVid(Dataset):
         return normalized_video_data, caption
 
     def __len__(self):
+        if self.test:
+            return 4
         return len(self.info)
 
 
@@ -58,5 +61,5 @@ if __name__ == '__main__':
     from video_dataset import WebVid
 
     dataset = WebVid("/home/bingliang/data/WebVid2.5M/videos",
-                     "/home/bingliang/data/webvid/results_2M_train.csv")
+                     "/home/bingliang/data/WebVid2.5M/subset_new_info.json")
     print(len(dataset))

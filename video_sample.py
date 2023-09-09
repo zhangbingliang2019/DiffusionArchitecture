@@ -33,8 +33,7 @@ def main(args):
     # Load model:
     latent_size = args.image_size // 8
     model = VideoDiT_models[args.model](
-        input_size=latent_size,
-        num_classes=args.num_classes
+        input_size=latent_size
     ).to(device)
     # Auto-download a pre-trained model or load a custom DiT checkpoint from train.py:
     ckpt_path = args.ckpt or f"DiT-XL-2-{args.image_size}x{args.image_size}.pt"
@@ -45,18 +44,27 @@ def main(args):
     vae = AutoencoderKL.from_pretrained(f"stabilityai/sd-vae-ft-{args.vae}").to(device)
 
     # Labels to condition the model with (feel free to change):
-    class_labels = [1000] * 32
+    y = (['Young positive couple laughing in the backyard in '
+         'front of the large house under falling snow. bearded '
+         'man and attractive woman in warm clothes have winter fun. '
+         'the guy showing thumb up']
+         * args.frame_size +
+         ['Broadcast twinkling squared diamonds, multi color, abstract, loopable, 4k']
+         * args.frame_size +
+         ['Beautiful young woman dancing in the field at sunset']
+         * args.frame_size +
+         ['Young woman with digital tablet talking to camera. beautiful woman '
+          'speaker using computer tablet on blue background.'] * args.frame_size)
 
     # Create sampling noise:
-    n = len(class_labels)
+    n = len(y)
     z = torch.randn(n, 4, latent_size, latent_size, device=device)  # (n, 4, W, W)
-    y = torch.tensor(class_labels, device=device)  # (n, )
 
     # Setup classifier-free guidance:
     # TODO: add condition
     z = torch.cat([z, z], 0)  # (2n, 4, W, W)
-    y_null = torch.tensor([1000] * n, device=device)  # (n, ) Null token
-    y = torch.cat([y, y_null], 0)  # (2n, )
+    y_null = ["" for i in y]
+    y = y + y_null
     model_kwargs = dict(y=y, cfg_scale=args.cfg_scale)
 
     # Sample images:
@@ -77,7 +85,7 @@ if __name__ == "__main__":
     parser.add_argument("--frame_size", type=int, default=16)
     parser.add_argument("--image-size", type=int, choices=[256, 512], default=256)
     parser.add_argument("--num-classes", type=int, default=1000)
-    parser.add_argument("--cfg-scale", type=float, default=4.0)
+    parser.add_argument("--cfg-scale", type=float, default=1.0)
     parser.add_argument("--num-sampling-steps", type=int, default=250)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--ckpt", type=str, default=None,
