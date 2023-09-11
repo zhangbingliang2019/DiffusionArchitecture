@@ -234,7 +234,7 @@ class FullAttentionVideoDiT(nn.Module):
         self.apply(_basic_init)
 
         # Initialize (and freeze) pos_embed by sin-cos embedding:
-        pos_embed = get_2d_sincos_pos_embed(self.pos_embed.shape[-1], int(self.x_embedder.num_patches ** 0.5))
+        pos_embed = get_3d_sincos_pos_embed(self.pos_embed.shape[-1], self.x_embedder.grid_size[0], self.x_embedder.grid_size[1])
         self.pos_embed.data.copy_(torch.from_numpy(pos_embed).float().unsqueeze(0))
 
         # Initialize patch_embed like nn.Linear (instead of nn.Conv2d):
@@ -294,6 +294,7 @@ class FullAttentionVideoDiT(nn.Module):
         """
         # (B, T, D), where T = H * W * F/ patch_size ** 2 * frame_patch_size
         x = self.x_embedder(x) + self.pos_embed
+
 
         t, y = self.decouple(t, y)
         t = self.t_embedder(t)  # (B, D)
@@ -366,10 +367,11 @@ def get_1d_sincos_pos_embed(embed_dim, grid_size):
 
 
 def get_3d_sincos_pos_embed_from_grid(embed_dim, grid):
+    spacial_embed_dim = embed_dim // 6 * 2
     # use half of dimensions to encode grid_h
-    emb_f = get_1d_sincos_pos_embed_from_grid(embed_dim - (embed_dim // 3 ** 2), grid[0])
-    emb_h = get_1d_sincos_pos_embed_from_grid(embed_dim // 3, grid[1])  # (H*W, D/2)
-    emb_w = get_1d_sincos_pos_embed_from_grid(embed_dim // 3, grid[2])  # (H*W, D/2)
+    emb_f = get_1d_sincos_pos_embed_from_grid(embed_dim - spacial_embed_dim * 2, grid[0])
+    emb_h = get_1d_sincos_pos_embed_from_grid(spacial_embed_dim, grid[1])  # (H*W, D/2)
+    emb_w = get_1d_sincos_pos_embed_from_grid(spacial_embed_dim, grid[2])  # (H*W, D/2)
 
     emb = np.concatenate([emb_f, emb_h, emb_w], axis=1)  # (H*W, D)
     return emb

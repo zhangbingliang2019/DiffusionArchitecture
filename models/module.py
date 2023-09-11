@@ -52,7 +52,7 @@ class PatchEmbedder(nn.Module):
             self.grid_size = tuple([s // p for s, p in zip(self.img_size, self.patch_size)])
             self.num_patches = self.grid_size[0] * self.grid_size[1] * self.grid_size[2]
 
-        self.proj = nn.Conv3d(in_chans, embed_dim, kernel_size=patch_size, stride=patch_size, bias=bias)
+        self.proj = nn.Conv3d(in_chans, embed_dim, kernel_size=self.patch_size, stride=self.patch_size, bias=bias)
         self.norm = norm_layer(embed_dim) if norm_layer else nn.Identity()
 
     def forward(self, x):

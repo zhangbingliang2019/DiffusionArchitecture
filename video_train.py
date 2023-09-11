@@ -17,8 +17,6 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 import models
-from torchvision.datasets import ImageFolder
-from torchvision import transforms
 import numpy as np
 from collections import OrderedDict
 from PIL import Image
@@ -31,9 +29,8 @@ import os
 
 from diffusion import create_diffusion
 from diffusers.models import AutoencoderKL
-from video_dataset import WebVid
+from test_video_dataset import WebVid
 from download import find_model
-
 
 def video_model_load_stage_dict_from_image(ckpt, video_model):
     para_dict = find_model(ckpt)
@@ -128,7 +125,6 @@ def main(args):
     Trains a new DiT model.
     """
     assert torch.cuda.is_available(), "Training currently requires at least one GPU."
-
     # Setup DDP:
     dist.init_process_group("nccl")
     assert args.global_batch_size % dist.get_world_size() == 0, f"Batch size must be divisible by world size."
@@ -176,7 +172,7 @@ def main(args):
     # Setup data:, TODO: replace data path
     dataset = WebVid("/home/bingliang/data/WebVid2.5M/videos",
                      "/home/bingliang/data/WebVid2.5M/subset_new_info.json",
-                     image_size=args.image_size, frame_size=args.frame_size, overfitting_test=True)
+                     image_size=args.image_size, frame_size=args.frame_size, overfitting_test=False)
     sampler = DistributedSampler(
         dataset,
         num_replicas=dist.get_world_size(),
@@ -282,11 +278,11 @@ if __name__ == "__main__":
     parser.add_argument("--model", type=str, choices=list(models.VideoDiT_models.keys()), default="STA-L/4")
     parser.add_argument("--image-size", type=int, choices=[256, 512], default=256)
     parser.add_argument("--frame_size", type=int, default=8)
-    parser.add_argument("--epochs", type=int, default=1400)
-    parser.add_argument("--global-batch-size", type=int, default=64)
+    parser.add_argument("--epochs", type=int, default=5_000)
+    parser.add_argument("--global-batch-size", type=int, default=4)
     parser.add_argument("--global-seed", type=int, default=0)
     parser.add_argument("--vae", type=str, choices=["ema", "mse"], default="ema")  # Choice doesn't affect training
-    parser.add_argument("--num-workers", type=int, default=4)
+    parser.add_argument("--num-workers", type=int, default=16)
     parser.add_argument("--log-every", type=int, default=50)
     parser.add_argument("--ckpt-every", type=int, default=5_000)
     args = parser.parse_args()
