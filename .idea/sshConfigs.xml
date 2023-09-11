@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project version="4">
-  <component name="SshConfigs">
-    <configs>
-      <sshConfig host="rp-a100-80gb-8x-hba004.cloud.together.ai" id="34b3ac13-23b6-4017-9e0d-2a1650ad52ea" keyPath="$USER_HOME$/.ssh/id_rsa" port="61204" nameFormat="DESCRIPTIVE" username="bingliang" useOpenSSHConfig="true" />
-    </configs>
-  </component>
-</project>

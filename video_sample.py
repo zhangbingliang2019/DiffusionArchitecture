@@ -42,17 +42,13 @@ def main(args):
     vae = AutoencoderKL.from_pretrained(f"stabilityai/sd-vae-ft-{args.vae}").to(device)
 
     # Labels to condition the model with (feel free to change):
-    y = (['Young positive couple laughing in the backyard in '
-         'front of the large house under falling snow. bearded '
-         'man and attractive woman in warm clothes have winter fun. '
-         'the guy showing thumb up']
-         * args.frame_size +
-         ['Broadcast twinkling squared diamonds, multi color, abstract, loopable, 4k']
-         * args.frame_size +
-         ['Beautiful young woman dancing in the field at sunset']
-         * args.frame_size +
-         ['Young woman with digital tablet talking to camera. beautiful woman '
-          'speaker using computer tablet on blue background.'] * args.frame_size)
+    origin_y = ['Merida, mexico - may 23, 2017: tourists are walking on a roadside near catholic church in the street of mexico at sunny summer day.',
+        'Fun clown - 3d animation',
+        '11th march 2017. nakhon pathom, thailand. devotees goes into a trance at the wai khru ceremony at wat bang phra temple. what bang phra is famous for its magically charged tattoos and amulets.',
+        'Decorate with pineapple sweet cake roll.']
+    y = []
+    for text in origin_y:
+        y += [text] * args.frame_size
 
     # Create sampling noise:
     n = len(y)
